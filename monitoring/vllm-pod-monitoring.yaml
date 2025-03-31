@@ -1,0 +1,14 @@
+
+apiVersion: monitoring.googleapis.com/v1
+kind: PodMonitoring
+metadata:
+ name: vllm-pod-monitoring
+spec:
+ selector:
+   matchLabels:
+    leaderworkerset.sigs.k8s.io/name: vllm
+    role: leader
+ endpoints:
+ - path: /metrics
+   port: 8080
+   interval: 15s
