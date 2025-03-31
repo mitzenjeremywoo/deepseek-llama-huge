@@ -6,7 +6,7 @@ metadata:
 spec:
   replicas: 1
   leaderWorkerTemplate:
-    size: 1
+    size: 2
     restartPolicy: RecreateGroupOnPodRestart
     leaderTemplate:
       metadata:
@@ -19,10 +19,8 @@ spec:
           - name: vllm-leader
             image: docker.io/vllm/vllm-openai:latest
             env:
-              - name: VLLM_LOGGING_LEVEL
-                value: DEBUG 
               - name: CUDA_VISIBLE_DEVICES
-                value: "-1"
+                value: ""
               - name: HUGGING_FACE_HUB_TOKEN
                 valueFrom:
                   secretKeyRef:
@@ -32,18 +30,18 @@ spec:
               - sh
               - -c
               - "bash /vllm-workspace/examples/online_serving/multi-node-serving.sh leader --ray_cluster_size=$(LWS_GROUP_SIZE);
-                python3 -m vllm.entrypoints.openai.api_server --port 8080 --model deepseek-ai/DeepSeek-R1 --device cpu --trust-remote-code --max-model-len 4096"
+                python3 -m vllm.entrypoints.openai.api_server --port 8080 --model meta-llama/Meta-Llama-3.1-405B-Instruct --device cpu"
             resources:
               limits:
                 #nvidia.com/gpu: "8"
-                cpu: 10
+                cpu: 8
             ports:
               - containerPort: 8080
             readinessProbe:
               tcpSocket:
                 port: 8080
-              initialDelaySeconds: 60
-              periodSeconds: 40
+              initialDelaySeconds: 15
+              periodSeconds: 10
             volumeMounts:
               - mountPath: /dev/shm
                 name: dshm
@@ -65,8 +63,8 @@ spec:
               - "bash /vllm-workspace/examples/online_serving/multi-node-serving.sh worker --ray_address=$(LWS_LEADER_ADDRESS)"
             resources:
               limits:
-                cpu: 20
                 #nvidia.com/gpu: "8"
+                cpu: 8
             env:
               - name: CUDA_VISIBLE_DEVICES
                 value: ""
